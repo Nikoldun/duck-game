@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Моя тапалка</title>
+    <style>
+        body {
+            background: linear-gradient(145deg, #f5c542 0%, #f09d1c 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: system-ui, 'Segoe UI', sans-serif;
+        }
+        .game {
+            text-align: center;
+            background: rgba(0,0,0,0.4);
+            border-radius: 60px;
+            padding: 30px 20px;
+            width: 300px;
+            backdrop-filter: blur(4px);
+        }
+        .score {
+            font-size: 48px;
+            font-weight: bold;
+            background: white;
+            display: inline-block;
+            padding: 10px 30px;
+            border-radius: 60px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 0 rgba(0,0,0,0.2);
+        }
+        .duck {
+            font-size: 150px;
+            cursor: pointer;
+            transition: transform 0.05s linear;
+            user-select: none;
+        }
+        .duck:active {
+            transform: scale(0.92);
+        }
+        .energy {
+            margin-top: 30px;
+            background: #ddd;
+            border-radius: 30px;
+            height: 20px;
+            width: 80%;
+            margin-left: auto;
+            margin-right: auto;
+            overflow: hidden;
+        }
+        .energy-fill {
+            width: 100%;
+            height: 100%;
+            background: #ff4757;
+            transition: width 0.2s;
+        }
+        button {
+            margin-top: 20px;
+            background: #2ed573;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 40px;
+            font-weight: bold;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+<div class="game">
+    <div class="score" id="score">0</div>
+    <div class="duck" id="duck">🦆</div>
+    <div class="energy">
+        <div class="energy-fill" id="energyFill" style="width: 100%"></div>
+    </div>
+    <button id="boostBtn">💪 Буст +10 энергии</button>
+</div>
+
+<script>
+    // ---- ИГРОВЫЕ ДАННЫЕ ----
+    let clicks = 0;          // накопленные монеты/очки
+    let energy = 100;        // текущая энергия
+    const MAX_ENERGY = 100;
+
+    // загружаем сохранённое (localStorage)
+    if (localStorage.getItem('duck_clicks')) {
+        clicks = parseInt(localStorage.getItem('duck_clicks'));
+        energy = parseInt(localStorage.getItem('duck_energy'));
+        if (isNaN(energy)) energy = MAX_ENERGY;
+    }
+
+    // ---- DOM элементы ----
+    const scoreDiv = document.getElementById('score');
+    const duckDiv = document.getElementById('duck');
+    const energyFill = document.getElementById('energyFill');
+
+    function updateUI() {
+        scoreDiv.innerText = clicks;
+        let percent = (energy / MAX_ENERGY) * 100;
+        energyFill.style.width = percent + '%';
+        // если энергия кончилась – уточка грустная
+        if (energy <= 0) duckDiv.innerText = '😢';
+        else duckDiv.innerText = '🦆';
+    }
+
+    function save() {
+        localStorage.setItem('duck_clicks', clicks);
+        localStorage.setItem('duck_energy', energy);
+    }
+
+    // КЛИК
+    function handleClick() {
+        if (energy <= 0) {
+            // можно показать уведомление
+            return;
+        }
+        // тратим энергию, получаем монетку
+        energy--;
+        clicks++;
+        updateUI();
+        save();
+
+        // маленькая анимация "встряски"
+        duckDiv.style.transform = 'scale(0.9)';
+        setTimeout(() => { duckDiv.style.transform = ''; }, 80);
+    }
+
+    // восстанавливаем энергию каждые 3 секунды (до максимума)
+    setInterval(() => {
+        if (energy < MAX_ENERGY) {
+            energy = Math.min(MAX_ENERGY, energy + 1);
+            updateUI();
+            save();
+        }
+    }, 3000);
+
+    // БУСТ (добавляет 10 энергии)
+    document.getElementById('boostBtn').onclick = () => {
+        energy = Math.min(MAX_ENERGY, energy + 10);
+        updateUI();
+        save();
+    };
+
+    duckDiv.addEventListener('click', handleClick);
+    updateUI();
+</script>
+</body>
+</html>
