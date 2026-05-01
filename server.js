@@ -3,7 +3,9 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+// НЕ указываем порт сами — берём из окружения
+// Если переменная не задана — используем 3000 как fallback
+const PORT = process.env.PORT;
 
 // Middleware
 app.use(express.json());
@@ -40,7 +42,6 @@ app.get('/api/player/:telegramId', (req, res) => {
         }
 
         if (!row) {
-            // Создаём нового игрока
             db.run('INSERT INTO players (telegram_id) VALUES (?)', [telegramId], function (err) {
                 if (err) {
                     res.status(500).json({ error: err.message });
@@ -143,7 +144,6 @@ app.post('/api/daily-bonus/:telegramId', (req, res) => {
             return;
         }
 
-        // Рассчитываем награду (база 50 + бонус за серию)
         const bonusReward = 50 + (streak - 1) * 10;
 
         db.run(`
@@ -162,12 +162,16 @@ app.post('/api/daily-bonus/:telegramId', (req, res) => {
     });
 });
 
-// Запуск сервера
+// Если PORT не задан — сервер сам получит его через process.env.PORT
+if (!PORT) {
+    console.error('❌ PORT не задан в окружении!');
+    process.exit(1);
+}
+
 app.listen(PORT, () => {
     console.log(`🚀 Сервер запущен на порту ${PORT}`);
 });
 
-// Корректное завершение работы с БД
 process.on('SIGINT', () => {
     db.close();
     process.exit();
