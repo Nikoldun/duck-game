@@ -196,10 +196,17 @@ app.post('/api/daily-bonus/:telegramId', (req, res) => {
 });
 
 // Запуск сервера
-app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Сервер запущен на порту ${PORT}`);
-    console.log(`📁 База данных: ${dbPath}`);
-});
+})
+    .on('error', (err) => {
+        if (err.code === 'EADDRINUSE') {
+            console.log(`⚠️ Порт ${PORT} уже занят, возможно приложение уже запущено. Пропускаем повторный запуск.`);
+        } else {
+            console.error('❌ Ошибка сервера:', err);
+            process.exit(1);
+        }
+    });
 
 process.on('SIGINT', () => {
     db.close(() => {
