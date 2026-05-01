@@ -4,11 +4,10 @@ const path = require('path');
 const fs = require('fs');
 
 const app = express();
-const PORT = process.env.PORT;
-if (!PORT) {
-    console.error('❌ PORT не задан в окружении!');
-    process.exit(1);
-}
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Сервер запущен на порту ${PORT}`);
+});
 
 // Middleware
 app.use(express.json());
