@@ -1,18 +1,43 @@
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
-// НЕ указываем порт сами — берём из окружения
-// Если переменная не задана — используем 3000 как fallback
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(express.json());
 app.use(express.static('public'));
 
+// ---------- НАСТРОЙКА БАЗЫ ДАННЫХ (для Bothost) ----------
+// Путь к папке data (Bothost создаёт её автоматически)
+const dataDir = '/app/data';
+// Для локальной разработки (если папки /app/data нет)
+const localDataDir = path.join(__dirname, 'data');
+
+// Определяем, где мы находимся
+let dbPath;
+if (fs.existsSync('/app/data')) {
+    dbPath = path.join('/app/data', 'game.db');
+    console.log('🟢 Работаем на Bothost, база в /app/data');
+} else {
+    // Локальная разработка
+    if (!fs.existsSync(localDataDir)) {
+        fs.mkdirSync(localDataDir, { recursive: true });
+    }
+    dbPath = path.join(localDataDir, 'game.db');
+    console.log('🟡 Локальный режим, база в ./data/game.db');
+}
+
 // Подключаем базу данных SQLite
-const db = new sqlite3.Database('./game.db');
+const db = new sqlite3.Database(dbPath, (err) => {
+    if (err) {
+        console.error('❌ Ошибка подключения к БД:', err.message);
+    } else {
+        console.log(`✅ База данных подключена: ${dbPath}`);
+    }
+});
 
 // Создаём таблицу для игроков, если её нет
 db.run(`
@@ -28,9 +53,15 @@ db.run(`
         last_bonus_date TEXT,
         bonus_streak INTEGER DEFAULT 0
     )
-`);
+`, (err) => {
+    if (err) {
+        console.error('❌ Ошибка создания таблицы:', err.message);
+    } else {
+        console.log('✅ Таблица players готова');
+    }
+});
 
-// API: получение данных игрока
+// ---------- API ----------
 app.get('/api/player/:telegramId', (req, res) => {
     const telegramId = req.params.telegramId;
 
@@ -44,6 +75,7 @@ app.get('/api/player/:telegramId', (req, res) => {
         if (!row) {
             db.run('INSERT INTO players (telegram_id) VALUES (?)', [telegramId], function (err) {
                 if (err) {
+                    console.error('Insert error:', err);
                     res.status(500).json({ error: err.message });
                     return;
                 }
@@ -73,7 +105,6 @@ app.get('/api/player/:telegramId', (req, res) => {
     });
 });
 
-// API: сохранение данных игрока
 app.post('/api/player/:telegramId', (req, res) => {
     const telegramId = req.params.telegramId;
     const { coins, energy, clickMultiplier, eggs, ducks, tasks } = req.body;
@@ -109,7 +140,6 @@ app.post('/api/player/:telegramId', (req, res) => {
     });
 });
 
-// API: получение ежедневного бонуса
 app.post('/api/daily-bonus/:telegramId', (req, res) => {
     const telegramId = req.params.telegramId;
     const today = new Date().toISOString().split('T')[0];
@@ -162,17 +192,15 @@ app.post('/api/daily-bonus/:telegramId', (req, res) => {
     });
 });
 
-// Если PORT не задан — сервер сам получит его через process.env.PORT
-if (!PORT) {
-    console.error('❌ PORT не задан в окружении!');
-    process.exit(1);
-}
-
+// Запуск сервера
 app.listen(PORT, () => {
     console.log(`🚀 Сервер запущен на порту ${PORT}`);
+    console.log(`📁 База данных: ${dbPath}`);
 });
 
 process.on('SIGINT', () => {
-    db.close();
-    process.exit();
+    db.close(() => {
+        console.log('📦 База данных закрыта');
+        process.exit();
+    });
 });
