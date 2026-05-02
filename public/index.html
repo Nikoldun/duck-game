@@ -294,16 +294,44 @@
         // Telegram ID (серверное сохранение)
         let telegramId = null;
 
-        // ---------- ПОЛУЧЕНИЕ TELEGRAM ID ----------
+        // ---------- ПОЛУЧЕНИЕ TELEGRAM ID (НАДЁЖНЫЙ) ----------
+        // Пытаемся получить ID из Telegram WebApp
         if (window.Telegram && window.Telegram.WebApp) {
-            const webApp = window.Telegram.WebApp;
-            webApp.ready();
-            telegramId = webApp.initDataUnsafe.user?.id.toString();
+            try {
+                const webApp = window.Telegram.WebApp;
+                webApp.ready();
+                if (webApp.initDataUnsafe && webApp.initDataUnsafe.user && webApp.initDataUnsafe.user.id) {
+                    telegramId = webApp.initDataUnsafe.user.id.toString();
+                    console.log('✅ Telegram ID получен через WebApp:', telegramId);
+                } else {
+                    console.warn('⚠️ WebApp есть, но user.id отсутствует');
+                }
+            } catch (e) {
+                console.error('Ошибка доступа к WebApp:', e);
+            }
         }
+
+        // Если не получили — пробуем взять сохранённый ID из localStorage (для постоянного тестирования)
         if (!telegramId) {
-            telegramId = 'test_' + Math.random().toString(36).substr(2, 9);
-            console.log('Тестовый режим, ID:', telegramId);
+            const savedId = localStorage.getItem('duck_user_id');
+            if (savedId && savedId.startsWith('user_')) {
+                telegramId = savedId;
+                console.log('📀 Загружен сохранённый ID:', telegramId);
+            } else {
+                // Создаём постоянный, а не случайный ID
+                let permanentId = localStorage.getItem('duck_user_id');
+                if (!permanentId) {
+                    permanentId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+                    localStorage.setItem('duck_user_id', permanentId);
+                }
+                telegramId = permanentId;
+                console.log('🆕 Создан постоянный тестовый ID:', telegramId);
+                console.log('ℹ️ При первом запуске в Telegram ID обновится автоматически');
+            }
         }
+
+        // Выводим финальный ID для отладки
+        console.log('🎮 Итоговый Telegram ID для этой сессии:', telegramId);
 
         // ---------- СЕРВЕРНЫЕ ФУНКЦИИ ----------
         async function loadFromServer() {
