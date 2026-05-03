@@ -337,7 +337,24 @@
                 const telegramId = userData.id.toString();
                 console.log('✅ ID пользователя:', telegramId);
 
-                // ---------- 2. КАСТОМНЫЕ УВЕДОМЛЕНИЯ (без адреса бота) ----------
+                // ---------- 2. ФОРМАТИРОВАНИЕ ЧИСЕЛ (1K, 1M, 1B) ----------
+                function formatNumber(num) {
+                    if (num >= 1_000_000_000) {
+                        const billions = num / 1_000_000_000;
+                        return billions % 1 < 0.1 ? Math.floor(billions) + 'B' : billions.toFixed(1) + 'B';
+                    }
+                    if (num >= 1_000_000) {
+                        const millions = num / 1_000_000;
+                        return millions % 1 < 0.1 ? Math.floor(millions) + 'M' : millions.toFixed(1) + 'M';
+                    }
+                    if (num >= 1_000) {
+                        const thousands = num / 1_000;
+                        return thousands % 1 < 0.1 ? Math.floor(thousands) + 'K' : thousands.toFixed(1) + 'K';
+                    }
+                    return num.toString();
+                }
+
+                // ---------- 3. КАСТОМНЫЕ УВЕДОМЛЕНИЯ (без адреса бота) ----------
                 function showToast(message, duration = 2000) {
                     const oldToast = document.querySelector('.toast-message');
                     if (oldToast) oldToast.remove();
@@ -404,7 +421,7 @@
                     });
                 }
 
-                // ---------- 3. ИГРОВЫЕ ПЕРЕМЕННЫЕ ----------
+                // ---------- 4. ИГРОВЫЕ ПЕРЕМЕННЫЕ ----------
                 let coins = 0;
                 let energy = 100;
                 const MAX_ENERGY = 100;
@@ -415,7 +432,7 @@
                 let bonusStreak = 0;
                 let lastBonusDate = null;
 
-                // ---------- 4. СЕРВЕР ----------
+                // ---------- 5. СЕРВЕР ----------
                 async function loadFromServer() {
                     try {
                         const response = await fetch(`/api/player/${telegramId}`);
@@ -499,18 +516,25 @@
                     }, 1000);
                 }
 
-                // ---------- 5. ОТРИСОВКА ----------
+                // ---------- 6. ОТРИСОВКА (с форматированием) ----------
                 function updateUI() {
-                    document.getElementById('score').innerText = Math.floor(coins);
+                    // Форматируем монеты
+                    const formattedCoins = formatNumber(Math.floor(coins));
+                    document.getElementById('score').innerText = formattedCoins;
+
                     document.getElementById('energyVal').innerText = Math.floor(energy);
                     document.getElementById('eggCount').innerText = eggs;
+
                     const percent = (energy / MAX_ENERGY) * 100;
                     document.getElementById('energyFill').style.width = percent + '%';
+
                     const duckEmoji = document.getElementById('duck');
                     if (energy <= 0) duckEmoji.innerText = '😴';
                     else duckEmoji.innerText = clickMultiplier > 1 ? '🐔⚡' : '🦆';
+
                     const passiveIncome = calculatePassiveIncome();
                     document.getElementById('passiveIncome').innerText = passiveIncome.toFixed(1);
+
                     const subBtn = document.getElementById('subscribeBtn');
                     if (tasks.subscribe) {
                         subBtn.disabled = true;
@@ -519,6 +543,7 @@
                         subBtn.disabled = false;
                         subBtn.innerText = '➕ +30 энергии';
                     }
+
                     renderEggsPanel();
                     renderDucksPanel();
                 }
@@ -611,7 +636,7 @@
                     }
                 }, 2000);
 
-                // ---------- 6. ЗАДАНИЕ ПОДПИСКА ----------
+                // ---------- 7. ЗАДАНИЕ ПОДПИСКА ----------
                 document.getElementById('subscribeBtn')?.addEventListener('click', () => {
                     if (tasks.subscribe) {
                         showToast('✅ Задание уже выполнено');
@@ -630,7 +655,7 @@
                     });
                 });
 
-                // ---------- 7. МАГАЗИН ----------
+                // ---------- 8. МАГАЗИН ----------
                 document.getElementById('buyEnergyBtn')?.addEventListener('click', () => {
                     const price = 25;
                     if (coins >= price && energy < MAX_ENERGY) {
@@ -677,7 +702,7 @@
                 document.getElementById('mergeDucksBtn')?.addEventListener('click', mergeDucks);
                 document.getElementById('dailyBonusBtn')?.addEventListener('click', claimDailyBonus);
 
-                // ---------- 8. ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК ----------
+                // ---------- 9. ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК ----------
                 const tabs = document.querySelectorAll('.tab-btn');
                 const panels = {
                     tap: document.getElementById('tapPanel'),
@@ -704,7 +729,7 @@
                     });
                 });
 
-                // ---------- 9. АВАТАРКА ----------
+                // ---------- 10. АВАТАРКА ----------
                 function loadUserAvatar() {
                     const img = document.getElementById('userAvatar');
                     if (!img) return;
@@ -720,7 +745,7 @@
                     }
                 }
 
-                // ---------- 10. ФИНАЛЬНЫЙ ЗАПУСК ----------
+                // ---------- 11. ФИНАЛЬНЫЙ ЗАПУСК ----------
                 document.getElementById('duck').addEventListener('click', clickDuck);
                 startPassiveIncome();
                 loadFromServer();
