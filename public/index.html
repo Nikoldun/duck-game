@@ -23,6 +23,18 @@
             font-family: system-ui, 'Segoe UI', 'Roboto', sans-serif;
         }
 
+        .avatar {
+            background: #fff1da;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        }
+
         .game-container {
             max-width: 550px;
             width: 100%;
@@ -201,6 +213,13 @@
 
 <body>
     <div class="game-container">
+        <!-- Строка с аватаркой (справа) -->
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 8px;">
+            <div class="avatar" id="avatarContainer">
+                <img id="userAvatar" src="" width="44" height="44"
+                    style="border-radius: 50%; object-fit: cover; border: 2px solid #ffd966;">
+            </div>
+        </div>
         <!-- Панель ресурсов -->
         <div class="stats">
             <div class="stat">🪙 <span id="score">0</span></div>
@@ -651,9 +670,38 @@
             });
         });
 
+        // ---------- ЗАГРУЗКА АВАТАРКИ ПОЛЬЗОВАТЕЛЯ ----------
+        function loadUserAvatar() {
+            const img = document.getElementById('userAvatar');
+            if (!img) return;
+
+            try {
+                if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe?.user) {
+                    const user = window.Telegram.WebApp.initDataUnsafe.user;
+                    if (user.photo_url) {
+                        img.src = user.photo_url;
+                        console.log('✅ Аватарка загружена из Telegram');
+                    } else {
+                        // Генерация аватарки по имени (первая буква)
+                        const name = user.first_name || 'Player';
+                        img.src = `https://ui-avatars.com/api/?background=2ed573&color=fff&name=${encodeURIComponent(name)}&size=44&rounded=true&bold=true`;
+                        console.log('🎨 Сгенерирована аватарка по имени:', name);
+                    }
+                } else {
+                    // Заглушка для браузера
+                    img.src = 'https://ui-avatars.com/api/?background=aaa&color=fff&name=?&size=44&rounded=true';
+                    console.log('🖥️ Режим браузера, аватарка-заглушка');
+                }
+            } catch (e) {
+                console.warn('Ошибка загрузки аватарки:', e);
+                img.src = 'https://ui-avatars.com/api/?background=ffd966&color=fff&name=U&size=44&rounded=true';
+            }
+        }
+
         document.getElementById('duck').addEventListener('click', clickDuck);
         startPassiveIncome();
         loadFromServer();
+        loadUserAvatar();
     </script>
 </body>
 
