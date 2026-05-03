@@ -50,8 +50,7 @@ db.run(`
         energy INTEGER DEFAULT 100,
         click_multiplier INTEGER DEFAULT 1,
         eggs INTEGER DEFAULT 0,
-        common_ducks INTEGER DEFAULT 0,
-        rare_ducks INTEGER DEFAULT 0,
+        ducks TEXT DEFAULT '{}',
         tasks_subscribe INTEGER DEFAULT 0,
         last_bonus_date TEXT,
         bonus_streak INTEGER DEFAULT 0
@@ -87,7 +86,7 @@ app.get('/api/player/:telegramId', (req, res) => {
                     energy: 100,
                     clickMultiplier: 1,
                     eggs: 0,
-                    ducks: { common: 0, rare: 0 },
+                    ducks: {},
                     tasks: { subscribe: false },
                     lastBonusDate: null,
                     bonusStreak: 0
@@ -99,8 +98,8 @@ app.get('/api/player/:telegramId', (req, res) => {
                 energy: row.energy,
                 clickMultiplier: row.click_multiplier,
                 eggs: row.eggs,
-                ducks: { common: row.common_ducks, rare: row.rare_ducks },
-                tasks: { subscribe: row.tasks_subscribe === 1 },
+                ducks: JSON.parse(row.ducks),
+                tasks: { subscribe: !!row.tasks_subscribe },
                 lastBonusDate: row.last_bonus_date,
                 bonusStreak: row.bonus_streak
             });
@@ -118,8 +117,7 @@ app.post('/api/player/:telegramId', (req, res) => {
             energy = ?,
             click_multiplier = ?,
             eggs = ?,
-            common_ducks = ?,
-            rare_ducks = ?,
+            ducks = ?,
             tasks_subscribe = ?
         WHERE telegram_id = ?
     `;
@@ -129,8 +127,7 @@ app.post('/api/player/:telegramId', (req, res) => {
         energy,
         clickMultiplier,
         eggs,
-        ducks.common,
-        ducks.rare,
+        JSON.stringify(ducks),
         tasks.subscribe ? 1 : 0,
         telegramId
     ], (err) => {
