@@ -5,7 +5,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>🦆 Утиная ферма | Тапалка</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -62,47 +61,6 @@
             padding: 5px 15px;
             border-radius: 40px;
             font-size: 1.1rem;
-        }
-
-        .duck-stats {
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(8px);
-            border-radius: 36px;
-            padding: 8px 16px;
-            margin-bottom: 12px;
-            text-align: center;
-            color: white;
-            font-weight: bold;
-            text-shadow: 1px 1px 0 black;
-        }
-
-        .duck-level {
-            font-size: 1.2rem;
-            margin-bottom: 5px;
-        }
-
-        .duck-xp-bar {
-            background: #3a2c1c;
-            border-radius: 20px;
-            height: 12px;
-            width: 100%;
-            overflow: hidden;
-            margin: 5px 0;
-        }
-
-        .duck-xp-fill {
-            background: linear-gradient(90deg, #ffd966, #ffb347);
-            width: 0%;
-            height: 100%;
-            transition: width 0.2s;
-        }
-
-        .duck-xp-text,
-        .duck-feed-count,
-        .duck-unique,
-        .bonus-reset {
-            font-size: 0.7rem;
-            margin: 2px 0;
         }
 
         .duck-area {
@@ -162,6 +120,10 @@
             box-shadow: 0 2px 0 #a4661a;
         }
 
+        .tab-btn:active {
+            transform: none;
+        }
+
         .panel {
             display: none;
             background: #fdf8e7;
@@ -188,6 +150,13 @@
             gap: 8px;
         }
 
+        .item-name {
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
         button {
             background: #f5b642;
             border: none;
@@ -202,7 +171,7 @@
 
         button:active {
             transform: translateY(2px);
-            box-shadow: none;
+            box-shadow: 0 0px 0 #a4661a;
         }
 
         button:disabled {
@@ -239,508 +208,500 @@
             color: #2d6a4f;
             font-weight: bold;
         }
-
-        /* Горизонтальные слоты для уток */
-        .ducks-slots {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            max-height: 280px;
-            overflow-y: hidden;
-        }
-
-        .slots-scroll {
-            display: flex;
-            overflow-x: auto;
-            gap: 12px;
-            padding: 8px 4px 16px;
-            scroll-snap-type: x mandatory;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .slots-scroll::-webkit-scrollbar {
-            height: 6px;
-        }
-
-        .slots-scroll::-webkit-scrollbar-track {
-            background: #e0d4bc;
-            border-radius: 10px;
-        }
-
-        .slots-scroll::-webkit-scrollbar-thumb {
-            background: #f5b642;
-            border-radius: 10px;
-        }
-
-        .duck-slot {
-            flex: 0 0 140px;
-            scroll-snap-align: start;
-            background: #fff1da;
-            border-radius: 24px;
-            padding: 12px;
-            text-align: center;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            border: 1px solid #f5cd94;
-        }
-
-        .duck-slot-emoji {
-            font-size: 3rem;
-            margin-bottom: 8px;
-        }
-
-        .duck-slot-name {
-            font-weight: bold;
-            font-size: 0.8rem;
-            background: #f5cd94;
-            display: inline-block;
-            padding: 2px 10px;
-            border-radius: 20px;
-            margin-top: 5px;
-        }
-
-        .duck-slot-income {
-            font-size: 0.7rem;
-            color: #7a5a2a;
-            margin-top: 6px;
-        }
     </style>
 </head>
 
 <body>
-    <div id="app">
-        <div class="game-container">
-            <!-- Аватарка -->
-            <div style="display: flex; justify-content: flex-end; margin-bottom: 8px;">
-                <div class="avatar" id="avatarContainer">
-                    <img id="userAvatar" src="" width="44" height="44"
-                        style="border-radius: 50%; object-fit: cover; border: 2px solid #ffd966;">
-                </div>
+    <div class="game-container">
+        <!-- Строка с аватаркой (справа) -->
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 8px;">
+            <div class="avatar" id="avatarContainer">
+                <img id="userAvatar" src="" width="44" height="44"
+                    style="border-radius: 50%; object-fit: cover; border: 2px solid #ffd966;">
             </div>
-            <!-- Ресурсы -->
-            <div class="stats">
-                <div class="stat">🪙 <span id="score">0</span></div>
-                <div class="stat">⚡ <span id="energyVal">100</span></div>
-                <div class="stat">🐣 <span id="eggCount">0</span></div>
-            </div>
+        </div>
+        <!-- Панель ресурсов -->
+        <div class="stats">
+            <div class="stat">🪙 <span id="score">0</span></div>
+            <div class="stat">⚡ <span id="energyVal">100</span></div>
+            <div class="stat">🐣 <span id="eggCount">0</span></div>
+        </div>
 
-            <!-- Детали утки -->
-            <div class="duck-stats">
-                <div class="duck-level">🦆 LVL <span id="duckLevel">1</span></div>
-                <div class="duck-xp-bar">
-                    <div class="duck-xp-fill" id="duckXpFill"></div>
-                </div>
-                <div class="duck-xp-text">⭐ <span id="duckXp">0</span> / <span id="duckXpNeeded">100</span> XP
-                </div>
-                <div class="duck-feed-count">🍗 ЖМИ И КОРМИ: <span id="feedCount">0</span> (сброс через <span
-                        id="feedResetTimer">0:00</span>)</div>
-                <div class="duck-unique">✨ Уникальность: <span id="duckUnique">Обычная</span></div>
-                <div class="bonus-reset">🎁 Сброс бонуса через <span id="bonusResetTimer">0:00</span></div>
+        <!-- Утка -->
+        <div class="duck-area">
+            <div class="duck" id="duck">🦆</div>
+            <div class="energy-bar">
+                <div class="energy-fill" id="energyFill"></div>
             </div>
+        </div>
 
-            <!-- Утка -->
-            <div class="duck-area">
-                <div class="duck" id="duck">🦆</div>
-                <div class="energy-bar">
-                    <div class="energy-fill" id="energyFill"></div>
-                </div>
-            </div>
+        <!-- Табы -->
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="tap">🚀 Тапалка</button>
+            <button class="tab-btn" data-tab="eggs">🥚 Яйца</button>
+            <button class="tab-btn" data-tab="ducks">🦆 Мои утки</button>
+            <button class="tab-btn" data-tab="shop">🏪 Магазин</button>
+        </div>
 
-            <!-- Табы -->
-            <div class="tabs">
-                <button class="tab-btn active" data-tab="tap">🚀 Тапалка</button>
-                <button class="tab-btn" data-tab="eggs">🥚 Яйца</button>
-                <button class="tab-btn" data-tab="ducks">🦆 Мои утки</button>
-                <button class="tab-btn" data-tab="shop">🏪 Магазин</button>
-            </div>
-
-            <!-- Панель тапалки -->
-            <div id="tapPanel" class="panel active">
+        <!-- Панель тапалки (задания + бонус) -->
+        <div id="tapPanel" class="panel active">
+            <div class="section-title">📋 Задания</div>
+            <div id="tasks-container">
                 <div class="item-card" id="task-subscribe">
                     <span>📢 Подписаться на канал</span>
                     <button id="subscribeBtn">➕ +30 энергии</button>
                 </div>
-                <div class="item-card" id="dailyBonusCard">
-                    <span>🎁 Ежедневный бонус</span>
-                    <button id="dailyBonusBtn">Забрать</button>
-                </div>
-                <div id="bonusInfo" class="bonus-info"></div>
-                <div class="passive-info">
-                    💰 Пассивный доход: <span id="passiveIncome">0</span> монет/сек
-                </div>
             </div>
 
-            <!-- Панель яиц -->
-            <div id="eggsPanel" class="panel">
-                <div id="eggsList"></div>
+            <!-- Ежедневный бонус -->
+            <div class="item-card" id="dailyBonusCard">
+                <span>🎁 Ежедневный бонус</span>
+                <button id="dailyBonusBtn">Забрать</button>
             </div>
+            <div id="bonusInfo" class="bonus-info"></div>
 
-            <!-- Панель уток с горизонтальными слотами -->
-            <div id="ducksPanel" class="panel">
-                <div class="section-title">🦆 Моя ферма (горизонтальные слоты)</div>
-                <div class="ducks-slots">
-                    <div class="slots-scroll" id="ducksSlotsContainer">
-                        <!-- слоты будут добавляться сюда динамически -->
-                    </div>
-                </div>
-                <div class="info-text" style="margin-top: 12px; text-align: center;">
-                    👉 Листай влево/вправо, чтобы посмотреть всех уток
-                </div>
+            <div class="passive-info">
+                💰 Пассивный доход: <span id="passiveIncome">0</span> монет/сек
             </div>
-
-            <!-- Панель магазина -->
-            <div id="shopPanel" class="panel">
-                <div class="item-card"><span>🍎 +20 энергии</span><button id="buyEnergyBtn">25 🪙</button></div>
-                <div class="item-card"><span>⚡ Множитель x2 (навсегда)</span><button id="buyMultiplierBtn">150
-                        🪙</button></div>
-                <div class="item-card"><span>🥚 Яйцо</span><button id="buyEggBtn">50 🪙</button></div>
-            </div>
-
-            <footer>Кликай по утке ⬇️ | Шанс найти яйцо — 10%</footer>
         </div>
+
+        <!-- Панель яиц -->
+        <div id="eggsPanel" class="panel">
+            <div class="section-title">🥚 Инкубатор</div>
+            <div id="eggsList"></div>
+        </div>
+
+        <!-- Панель коллекции уток -->
+        <div id="ducksPanel" class="panel">
+            <div class="section-title">🦆 Ваша ферма</div>
+            <div id="ducksList"></div>
+            <button id="mergeDucksBtn" style="width:100%; margin-top:10px;">🔄 Объединить двух обычных уток → 🦢
+                Редкая</button>
+        </div>
+
+        <!-- Панель магазина -->
+        <div id="shopPanel" class="panel">
+            <div class="section-title">🛒 Магазин</div>
+            <div class="item-card">
+                <span>🍎 +20 энергии</span>
+                <button id="buyEnergyBtn">25 🪙</button>
+            </div>
+            <div class="item-card">
+                <span>⚡ Множитель x2 (навсегда)</span>
+                <button id="buyMultiplierBtn">150 🪙</button>
+            </div>
+            <div class="item-card">
+                <span>🥚 Яйцо (вылупить утку)</span>
+                <button id="buyEggBtn">50 🪙</button>
+            </div>
+        </div>
+        <footer>Кликай по утке ⬇️ | Шанс найти яйцо — 10%</footer>
     </div>
 
     <script>
-        (function () {
-            document.addEventListener('DOMContentLoaded', () => {
-                if (!window.Telegram || !window.Telegram.WebApp) {
-                    document.getElementById('app').innerHTML = '<div style="padding:20px;text-align:center;">❌ Игра доступна только внутри Telegram</div>';
-                    return;
-                }
+        // ---------- ИГРОВОЕ СОСТОЯНИЕ ----------
+        let coins = 0;
+        let energy = 100;
+        const MAX_ENERGY = 100;
+        let clickMultiplier = 1;
+        let eggs = 0;
+        let ducks = { common: 0, rare: 0 };
+        let tasks = { subscribe: false };
+        let bonusStreak = 0;
+        let lastBonusDate = null;
+
+        // Telegram ID (серверное сохранение)
+        let telegramId = null;
+
+        // ---------- ПОЛУЧЕНИЕ TELEGRAM ID (НАДЁЖНЫЙ) ----------
+        // Пытаемся получить ID из Telegram WebApp
+        if (window.Telegram && window.Telegram.WebApp) {
+            try {
                 const webApp = window.Telegram.WebApp;
                 webApp.ready();
-                webApp.expand();
-                const userData = webApp.initDataUnsafe?.user;
-                if (!userData || !userData.id) {
-                    document.getElementById('app').innerHTML = '<div style="padding:20px;text-align:center;">❌ Не удалось получить ID пользователя</div>';
-                    return;
+                if (webApp.initDataUnsafe && webApp.initDataUnsafe.user && webApp.initDataUnsafe.user.id) {
+                    telegramId = webApp.initDataUnsafe.user.id.toString();
+                    console.log('✅ Telegram ID получен через WebApp:', telegramId);
+                } else {
+                    console.warn('⚠️ WebApp есть, но user.id отсутствует');
                 }
-                const telegramId = userData.id.toString();
-                console.log('✅ ID пользователя:', telegramId);
+            } catch (e) {
+                console.error('Ошибка доступа к WebApp:', e);
+            }
+        }
 
-                // ---------- ИГРОВЫЕ ПЕРЕМЕННЫЕ ----------
-                let coins = 0, energy = 100, clickMultiplier = 1, eggs = 0;
-                let ducks = { common: 0, rare: 0, epic: 0, legendary: 0 };
-                let tasks = { subscribe: false };
-                let bonusStreak = 0, lastBonusDate = null;
-                let duckLevel = 1, duckXp = 0, duckXpNeeded = 100, feedCount = 0;
-                const MAX_ENERGY = 100;
-
-                // ---------- СИСТЕМА СЛОТОВ ДЛЯ УТОК ----------
-                let duckSlots = []; // массив объектов уток
-
-                // Функция загрузки слотов из сохранённых данных
-                function loadDuckSlots() {
-                    const saved = localStorage.getItem('duck_slots');
-                    if (saved) {
-                        try {
-                            duckSlots = JSON.parse(saved);
-                        } catch (e) { console.warn(e); }
-                    }
-                    // Если слотов нет, создаём несколько демо-уток (для красоты)
-                    if (!duckSlots.length) {
-                        duckSlots = [
-                            { type: 'common', emoji: '🦆', name: 'Кряква', income: 0.2 },
-                            { type: 'common', emoji: '🦆', name: 'Пекинка', income: 0.2 },
-                            { type: 'rare', emoji: '🦢', name: 'Серебряная', income: 0.8 }
-                        ];
-                    }
-                    renderDuckSlots();
+        // Если не получили — пробуем взять сохранённый ID из localStorage (для постоянного тестирования)
+        if (!telegramId) {
+            const savedId = localStorage.getItem('duck_user_id');
+            if (savedId && savedId.startsWith('user_')) {
+                telegramId = savedId;
+                console.log('📀 Загружен сохранённый ID:', telegramId);
+            } else {
+                // Создаём постоянный, а не случайный ID
+                let permanentId = localStorage.getItem('duck_user_id');
+                if (!permanentId) {
+                    permanentId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+                    localStorage.setItem('duck_user_id', permanentId);
                 }
+                telegramId = permanentId;
+                console.log('🆕 Создан постоянный тестовый ID:', telegramId);
+                console.log('ℹ️ При первом запуске в Telegram ID обновится автоматически');
+            }
+        }
 
-                // Сохранение слотов в localStorage
-                function saveDuckSlots() {
-                    localStorage.setItem('duck_slots', JSON.stringify(duckSlots));
-                }
+        // Выводим финальный ID для отладки
+        console.log('🎮 Итоговый Telegram ID для этой сессии:', telegramId);
 
-                // Добавление новой утки в слот
-                function addDuckToSlot(duckType) {
-                    let newDuck = null;
-                    if (duckType === 'common') {
-                        newDuck = { type: 'common', emoji: '🦆', name: 'Обычная утка', income: 0.2 };
-                    } else if (duckType === 'rare') {
-                        newDuck = { type: 'rare', emoji: '🦢', name: 'Редкая утка', income: 0.8 };
-                    } else if (duckType === 'epic') {
-                        newDuck = { type: 'epic', emoji: '🔥', name: 'Эпическая утка', income: 2.0 };
-                    } else if (duckType === 'legendary') {
-                        newDuck = { type: 'legendary', emoji: '✨', name: 'Легендарная утка', income: 5.0 };
-                    } else {
-                        return;
-                    }
-                    duckSlots.push(newDuck);
-                    saveDuckSlots();
-                    renderDuckSlots();
-                    // Обновляем пассивный доход (для отображения)
+        // ---------- СЕРВЕРНЫЕ ФУНКЦИИ ----------
+        async function loadFromServer() {
+            try {
+                const response = await fetch(`/api/player/${telegramId}`);
+                const data = await response.json();
+                coins = data.coins || 0;
+                energy = data.energy !== undefined ? data.energy : 100;
+                clickMultiplier = data.clickMultiplier || 1;
+                eggs = data.eggs || 0;
+                ducks = data.ducks || { common: 0, rare: 0 };
+                tasks = data.tasks || { subscribe: false };
+                lastBonusDate = data.lastBonusDate || null;
+                bonusStreak = data.bonusStreak || 0;
+                updateUI();
+                updateBonusUI();
+            } catch (e) {
+                console.error('Ошибка загрузки с сервера:', e);
+                // fallback на localStorage
+                loadGameLocal();
+            }
+        }
+
+        async function saveToServer() {
+            try {
+                await fetch(`/api/player/${telegramId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ coins, energy, clickMultiplier, eggs, ducks, tasks })
+                });
+            } catch (e) {
+                console.error('Ошибка сохранения на сервер:', e);
+                saveGameLocal();
+            }
+        }
+
+        async function claimDailyBonus() {
+            try {
+                const response = await fetch(`/api/daily-bonus/${telegramId}`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                if (data.success) {
+                    coins += data.reward;
+                    bonusStreak = data.streak;
                     updateUI();
+                    updateBonusUI();
+                    saveToServer();
+                    showToast(`🎉 Бонус: +${data.reward} монет! Серия: ${data.streak} дней`);
+                } else {
+                    showToast(data.message || 'Бонус уже получен сегодня');
                 }
+            } catch (e) {
+                console.error('Ошибка бонуса:', e);
+                showToast('Ошибка сервера, попробуйте позже');
+            }
+        }
 
-                // Удаление утки из слота
-                function removeDuckFromSlot(index) {
-                    if (index >= 0 && index < duckSlots.length) {
-                        duckSlots.splice(index, 1);
-                        saveDuckSlots();
-                        renderDuckSlots();
-                        updateUI();
-                    }
-                }
+        function updateBonusUI() {
+            const bonusInfo = document.getElementById('bonusInfo');
+            if (bonusInfo) {
+                const nextBonus = 50 + (bonusStreak || 0) * 10;
+                bonusInfo.innerHTML = `🔥 Серия: ${bonusStreak || 0} дней | Завтра: ${nextBonus} монет`;
+            }
+        }
 
-                // Отрисовка горизонтальных слотов
-                function renderDuckSlots() {
-                    const container = document.getElementById('ducksSlotsContainer');
-                    if (!container) return;
+        // ---------- ЛОКАЛЬНОЕ СОХРАНЕНИЕ (FALLBACK) ----------
+        function loadGameLocal() {
+            const saved = localStorage.getItem('duck_farm');
+            if (saved) {
+                try {
+                    const data = JSON.parse(saved);
+                    coins = data.coins || 0;
+                    energy = data.energy !== undefined ? Math.min(MAX_ENERGY, data.energy) : 100;
+                    clickMultiplier = data.clickMultiplier || 1;
+                    eggs = data.eggs || 0;
+                    ducks = data.ducks || { common: 0, rare: 0 };
+                    tasks = data.tasks || { subscribe: false };
+                } catch (e) { }
+            }
+            updateUI();
+        }
 
-                    if (duckSlots.length === 0) {
-                        container.innerHTML = '<div style="flex: 1; text-align: center; padding: 20px;">🐤 Пока нет уток. Вылупите из яйца!</div>';
-                        return;
-                    }
+        function saveGameLocal() {
+            const data = { coins, energy, clickMultiplier, eggs, ducks, tasks };
+            localStorage.setItem('duck_farm', JSON.stringify(data));
+        }
 
-                    let html = '';
-                    duckSlots.forEach((duck, idx) => {
-                        html += `
-                            <div class="duck-slot">
-                                <div class="duck-slot-emoji">${duck.emoji}</div>
-                                <div class="duck-slot-name">${duck.name}</div>
-                                <div class="duck-slot-income">+${duck.income} 🪙/сек</div>
-                                <button class="remove-duck-btn" data-index="${idx}" style="margin-top: 6px; padding: 4px 8px; font-size: 0.6rem;">🗑️</button>
-                            </div>
-                        `;
-                    });
-                    container.innerHTML = html;
+        // ---------- ПАССИВНЫЙ ДОХОД ----------
+        function calculatePassiveIncome() {
+            return ducks.common * 0.2 + ducks.rare * 0.8;
+        }
 
-                    // Навешиваем обработчики на кнопки удаления
-                    document.querySelectorAll('.remove-duck-btn').forEach(btn => {
-                        btn.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            const index = parseInt(btn.dataset.index);
-                            removeDuckFromSlot(index);
-                        });
-                    });
-                }
-
-                // ---------- СЕРВЕРНЫЕ ФУНКЦИИ ----------
-                async function loadFromServer() {
-                    try {
-                        const res = await fetch(`/api/player/${telegramId}`);
-                        const data = await res.json();
-                        coins = data.coins;
-                        energy = data.energy;
-                        clickMultiplier = data.clickMultiplier;
-                        eggs = data.eggs;
-                        ducks = data.ducks;
-                        tasks = data.tasks;
-                        bonusStreak = data.bonusStreak;
-                        lastBonusDate = data.lastBonusDate;
-                        duckLevel = data.duckLevel;
-                        duckXp = data.duckXp;
-                        duckXpNeeded = data.duckXpNeeded;
-                        feedCount = data.feedCount;
-                        updateUI();
-                        updateBonusUI();
-                        updateDuckStats();
-                    } catch (e) { console.error(e); }
-                }
-
-                async function saveToServer() {
-                    try {
-                        await fetch(`/api/player/${telegramId}`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ coins, energy, clickMultiplier, eggs, ducks, tasks, duckLevel, duckXp, duckXpNeeded, feedCount })
-                        });
-                    } catch (e) { console.error(e); }
-                }
-
-                // ---------- UI ОБНОВЛЕНИЯ ----------
-                function updateUI() {
-                    document.getElementById('score').innerText = Math.floor(coins);
-                    document.getElementById('energyVal').innerText = Math.floor(energy);
-                    document.getElementById('eggCount').innerText = eggs;
-                    const percent = (energy / MAX_ENERGY) * 100;
-                    document.getElementById('energyFill').style.width = percent + '%';
-                    const duckEmoji = document.getElementById('duck');
-                    if (energy <= 0) duckEmoji.innerText = '😴';
-                    else duckEmoji.innerText = clickMultiplier > 1 ? '🐔⚡' : '🦆';
-                    // Пассивный доход считаем из duckSlots
-                    let passive = 0;
-                    for (let i = 0; i < duckSlots.length; i++) {
-                        passive += duckSlots[i].income;
-                    }
-                    document.getElementById('passiveIncome').innerText = passive.toFixed(1);
-                    const subBtn = document.getElementById('subscribeBtn');
-                    if (tasks.subscribe) { subBtn.disabled = true; subBtn.innerText = '✅ Выполнено'; }
-                    else { subBtn.disabled = false; subBtn.innerText = '➕ +30 энергии'; }
-                    renderEggsPanel();
-                }
-
-                function updateDuckStats() {
-                    document.getElementById('duckLevel').innerText = duckLevel;
-                    document.getElementById('duckXp').innerText = Math.floor(duckXp);
-                    document.getElementById('duckXpNeeded').innerText = duckXpNeeded;
-                    const percent = (duckXp / duckXpNeeded) * 100;
-                    document.getElementById('duckXpFill').style.width = percent + '%';
-                    document.getElementById('feedCount').innerText = feedCount;
-                    let unique = 'Обычная';
-                    // Считаем уникальность по слотам (если есть легендарная или эпическая)
-                    for (let i = 0; i < duckSlots.length; i++) {
-                        if (duckSlots[i].type === 'legendary') unique = 'Легендарная';
-                        else if (duckSlots[i].type === 'epic') unique = 'Эпическая';
-                        else if (duckSlots[i].type === 'rare' && unique === 'Обычная') unique = 'Редкая';
-                    }
-                    document.getElementById('duckUnique').innerText = unique;
-                }
-
-                function renderEggsPanel() {
-                    const container = document.getElementById('eggsList');
-                    if (!container) return;
-                    if (eggs === 0) {
-                        container.innerHTML = '<div class="item-card">🥚 Нет яиц. Кликай по утке — шанс 10%</div>';
-                        return;
-                    }
-                    container.innerHTML = `<div class="item-card"><div class="item-name">🥚 Яйцо x${eggs}</div><button id="hatchEggBtn">🐣 Вылупить</button></div>`;
-                    document.getElementById('hatchEggBtn')?.addEventListener('click', hatchEgg);
-                }
-
-                function hatchEgg() {
-                    if (eggs <= 0) return;
-                    eggs--;
-                    const isRare = Math.random() < 0.2;
-                    if (isRare) {
-                        ducks.rare++;
-                        addDuckToSlot('rare');
-                        alert('✨ Вылупилась РЕДКАЯ утка! ✨');
-                    } else {
-                        ducks.common++;
-                        addDuckToSlot('common');
-                        alert('🐥 Вылупилась обычная утка!');
-                    }
+        let passiveInterval = null;
+        function startPassiveIncome() {
+            if (passiveInterval) clearInterval(passiveInterval);
+            passiveInterval = setInterval(() => {
+                let income = calculatePassiveIncome();
+                if (income > 0) {
+                    coins += income;
                     updateUI();
                     saveToServer();
-                }
-
-                // ---------- КЛИК ----------
-                function clickDuck() {
-                    if (energy <= 0) return;
-                    const gain = clickMultiplier;
-                    coins += gain;
-                    energy--;
-                    duckXp += gain;
-                    if (duckXp >= duckXpNeeded) {
-                        duckLevel++;
-                        duckXp -= duckXpNeeded;
-                        duckXpNeeded = Math.floor(duckXpNeeded * 1.2);
-                        alert(`🎉 Утка повысила уровень до ${duckLevel}!`);
+                    const scoreEl = document.getElementById('score');
+                    if (scoreEl) {
+                        scoreEl.style.transform = 'scale(1.1)';
+                        setTimeout(() => { if (scoreEl) scoreEl.style.transform = ''; }, 150);
                     }
-                    feedCount++;
-                    if (Math.random() < 0.1) { eggs++; alert('🥚 Вы нашли яйцо!'); }
+                }
+            }, 1000);
+        }
+
+        // ---------- ОБНОВЛЕНИЕ ИНТЕРФЕЙСА ----------
+        function updateUI() {
+            document.getElementById('score').innerText = Math.floor(coins);
+            document.getElementById('energyVal').innerText = Math.floor(energy);
+            document.getElementById('eggCount').innerText = eggs;
+
+            const percent = (energy / MAX_ENERGY) * 100;
+            document.getElementById('energyFill').style.width = percent + '%';
+
+            const duckEmoji = document.getElementById('duck');
+            if (energy <= 0) duckEmoji.innerText = '😴';
+            else duckEmoji.innerText = clickMultiplier > 1 ? '🐔⚡' : '🦆';
+
+            const passiveIncome = calculatePassiveIncome();
+            document.getElementById('passiveIncome').innerText = passiveIncome.toFixed(1);
+
+            const subBtn = document.getElementById('subscribeBtn');
+            if (tasks.subscribe) {
+                subBtn.disabled = true;
+                subBtn.innerText = '✅ Выполнено';
+            } else {
+                subBtn.disabled = false;
+                subBtn.innerText = '➕ +30 энергии';
+            }
+
+            renderEggsPanel();
+            renderDucksPanel();
+        }
+
+        function renderEggsPanel() {
+            const container = document.getElementById('eggsList');
+            if (!container) return;
+            if (eggs === 0) {
+                container.innerHTML = '<div class="item-card">🥚 Нет яиц. Кликай по утке — с вероятностью 10% найдёшь яйцо!</div>';
+                return;
+            }
+            container.innerHTML = `
+            <div class="item-card">
+                <div class="item-name">🥚 Обычное яйцо x${eggs}</div>
+                <button id="hatchEggBtn">🐣 Вылупить (1 яйцо)</button>
+            </div>
+        `;
+            const hatchBtn = document.getElementById('hatchEggBtn');
+            if (hatchBtn) hatchBtn.onclick = () => hatchEgg();
+        }
+
+        function renderDucksPanel() {
+            const container = document.getElementById('ducksList');
+            if (!container) return;
+            let html = '';
+            if (ducks.common > 0) {
+                html += `<div class="item-card"><span>🦆 Обычная утка x${ducks.common}</span><span class="badge">+${(ducks.common * 0.2).toFixed(1)}/сек</span></div>`;
+            }
+            if (ducks.rare > 0) {
+                html += `<div class="item-card"><span>🦢 Редкая утка x${ducks.rare}</span><span class="badge">+${(ducks.rare * 0.8).toFixed(1)}/сек</span></div>`;
+            }
+            if (ducks.common === 0 && ducks.rare === 0) {
+                html = '<div class="item-card">🐤 Пока нет уток. Получи яйцо и вылупи первую!</div>';
+            }
+            container.innerHTML = html;
+        }
+
+        function hatchEgg() {
+            if (eggs <= 0) return;
+            eggs--;
+            const isRare = Math.random() < 0.2;
+            if (isRare) {
+                ducks.rare++;
+                showToast('✨ Вылупилась РЕДКАЯ утка! +0.8 монет/сек ✨');
+            } else {
+                ducks.common++;
+                showToast('🐥 Вылупилась обычная утка! +0.2 монет/сек');
+            }
+            updateUI();
+            saveToServer();
+        }
+
+        function mergeDucks() {
+            if (ducks.common >= 2) {
+                ducks.common -= 2;
+                ducks.rare++;
+                showToast('🔄 Объединение успешно! Вы получили РЕДКУЮ утку!');
+                updateUI();
+                saveToServer();
+            } else {
+                alert('Нужно минимум 2 обычные утки для объединения.');
+            }
+        }
+
+        function showToast(msg) {
+            alert(msg);
+        }
+
+        // ---------- КЛИК ПО УТКЕ ----------
+        function clickDuck() {
+            if (energy <= 0) return;
+            let gain = clickMultiplier;
+            coins += gain;
+            energy--;
+
+            if (Math.random() < 0.1) {
+                eggs++;
+                showToast('🥚 Вы нашли яйцо! Зайдите во вкладку "Яйца"');
+            }
+
+            updateUI();
+            saveToServer();
+
+            const duck = document.getElementById('duck');
+            duck.style.transform = 'scale(0.87)';
+            setTimeout(() => { duck.style.transform = ''; }, 70);
+        }
+
+        // ---------- ВОССТАНОВЛЕНИЕ ЭНЕРГИИ ----------
+        setInterval(() => {
+            if (energy < MAX_ENERGY) {
+                energy = Math.min(MAX_ENERGY, energy + 1);
+                updateUI();
+                saveToServer();
+            }
+        }, 2000);
+
+        // ---------- ЗАДАНИЕ: ПОДПИСКА ----------
+        document.getElementById('subscribeBtn')?.addEventListener('click', () => {
+            if (tasks.subscribe) return;
+            const channelLink = 'https://t.me/duck_farm_channel';
+            window.open(channelLink, '_blank');
+            setTimeout(() => {
+                if (confirm('Подписались? Нажмите ОК для получения награды')) {
+                    tasks.subscribe = true;
+                    energy = Math.min(MAX_ENERGY, energy + 30);
                     updateUI();
-                    updateDuckStats();
                     saveToServer();
-                    const duck = document.getElementById('duck');
-                    duck.style.transform = 'scale(0.87)';
-                    setTimeout(() => { duck.style.transform = ''; }, 70);
+                    alert('🎉 +30 энергии!');
                 }
+            }, 3000);
+        });
 
-                // ---------- ЕЖЕДНЕВНЫЙ БОНУС ----------
-                async function claimDailyBonus() {
-                    try {
-                        const res = await fetch(`/api/daily-bonus/${telegramId}`, { method: 'POST' });
-                        const data = await res.json();
-                        if (data.success) {
-                            coins += data.reward;
-                            bonusStreak = data.streak;
-                            updateUI();
-                            updateBonusUI();
-                            saveToServer();
-                            alert(`🎉 Бонус: +${data.reward} монет! Серия: ${data.streak} дней`);
-                        } else alert(data.message);
-                    } catch (e) { console.error(e); }
-                }
+        // ---------- МАГАЗИН ----------
+        document.getElementById('buyEnergyBtn')?.addEventListener('click', () => {
+            const price = 25;
+            if (coins >= price && energy < MAX_ENERGY) {
+                coins -= price;
+                energy = Math.min(MAX_ENERGY, energy + 20);
+                updateUI();
+                saveToServer();
+            } else if (energy >= MAX_ENERGY) {
+                alert('Энергия полная');
+            } else {
+                alert(`Не хватает ${price} монет`);
+            }
+        });
 
-                function updateBonusUI() {
-                    const el = document.getElementById('bonusInfo');
-                    if (el) el.innerHTML = `🔥 Серия: ${bonusStreak} дней | Завтра: ${50 + bonusStreak * 10} монет`;
-                }
+        document.getElementById('buyMultiplierBtn')?.addEventListener('click', () => {
+            const price = 150;
+            if (coins >= price && clickMultiplier === 1) {
+                coins -= price;
+                clickMultiplier = 2;
+                updateUI();
+                saveToServer();
+                alert('🔥 Множитель x2 куплен навсегда!');
+            } else if (clickMultiplier > 1) {
+                alert('У вас уже есть множитель');
+            } else {
+                alert(`Нужно ${price} монет`);
+            }
+        });
 
-                // ---------- ТАЙМЕРЫ ----------
-                function startFeedResetTimer() {
-                    let secondsLeft = 4 * 3600;
-                    setInterval(() => {
-                        if (secondsLeft <= 0) { feedCount = 0; updateDuckStats(); saveToServer(); secondsLeft = 4 * 3600; }
-                        else secondsLeft--;
-                        const hrs = Math.floor(secondsLeft / 3600);
-                        const mins = Math.floor((secondsLeft % 3600) / 60);
-                        const secs = secondsLeft % 60;
-                        document.getElementById('feedResetTimer').innerText = `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-                    }, 1000);
-                }
+        document.getElementById('buyEggBtn')?.addEventListener('click', () => {
+            const price = 50;
+            if (coins >= price) {
+                coins -= price;
+                eggs++;
+                updateUI();
+                saveToServer();
+                alert('🥚 Яйцо добавлено в инкубатор!');
+            } else {
+                alert(`Нужно ${price} монет`);
+            }
+        });
 
-                function startBonusResetTimer() {
-                    function update() {
-                        const now = new Date();
-                        const midnight = new Date(now);
-                        midnight.setHours(24, 0, 0, 0);
-                        const diff = Math.floor((midnight - now) / 1000);
-                        if (diff <= 0) location.reload();
-                        const hrs = Math.floor(diff / 3600);
-                        const mins = Math.floor((diff % 3600) / 60);
-                        const secs = diff % 60;
-                        document.getElementById('bonusResetTimer').innerText = `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-                    }
-                    update();
-                    setInterval(update, 1000);
-                }
+        document.getElementById('mergeDucksBtn')?.addEventListener('click', mergeDucks);
+        document.getElementById('dailyBonusBtn')?.addEventListener('click', claimDailyBonus);
 
-                // ---------- МАГАЗИН ----------
-                document.getElementById('buyEnergyBtn')?.addEventListener('click', () => {
-                    if (coins >= 25 && energy < MAX_ENERGY) { coins -= 25; energy = Math.min(MAX_ENERGY, energy + 20); updateUI(); saveToServer(); }
-                    else alert(energy >= MAX_ENERGY ? 'Энергия полная' : 'Не хватает 25 монет');
+        // ---------- ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК ----------
+        const tabs = document.querySelectorAll('.tab-btn');
+        const panels = {
+            tap: document.getElementById('tapPanel'),
+            eggs: document.getElementById('eggsPanel'),
+            ducks: document.getElementById('ducksPanel'),
+            shop: document.getElementById('shopPanel')
+        };
+
+        tabs.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tabId = btn.dataset.tab;
+                tabs.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                Object.values(panels).forEach(panel => {
+                    if (panel) panel.classList.remove('active');
                 });
-                document.getElementById('buyMultiplierBtn')?.addEventListener('click', () => {
-                    if (coins >= 150 && clickMultiplier === 1) { coins -= 150; clickMultiplier = 2; updateUI(); saveToServer(); alert('🔥 Множитель x2 куплен!'); }
-                    else alert(clickMultiplier > 1 ? 'Множитель уже есть' : 'Нужно 150 монет');
-                });
-                document.getElementById('buyEggBtn')?.addEventListener('click', () => {
-                    if (coins >= 50) { coins -= 50; eggs++; updateUI(); saveToServer(); alert('🥚 +1 яйцо'); }
-                    else alert('Нужно 50 монет');
-                });
-                document.getElementById('subscribeBtn')?.addEventListener('click', () => {
-                    if (tasks.subscribe) return;
-                    window.open('https://t.me/duck_farm_channel', '_blank');
-                    setTimeout(() => {
-                        if (confirm('Подписались?')) { tasks.subscribe = true; energy = Math.min(MAX_ENERGY, energy + 30); updateUI(); saveToServer(); alert('🎉 +30 энергии!'); }
-                    }, 3000);
-                });
-                document.getElementById('dailyBonusBtn')?.addEventListener('click', claimDailyBonus);
-
-                // ---------- ПЕРЕКЛЮЧЕНИЕ ТАБОВ ----------
-                const tabs = document.querySelectorAll('.tab-btn');
-                const panels = { tap: document.getElementById('tapPanel'), eggs: document.getElementById('eggsPanel'), ducks: document.getElementById('ducksPanel'), shop: document.getElementById('shopPanel') };
-                tabs.forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        const tabId = btn.dataset.tab;
-                        tabs.forEach(b => b.classList.remove('active'));
-                        btn.classList.add('active');
-                        Object.values(panels).forEach(p => p?.classList.remove('active'));
-                        if (panels[tabId]) panels[tabId].classList.add('active');
-                    });
-                });
-
-                // ---------- АВАТАРКА ----------
-                function loadUserAvatar() {
-                    const img = document.getElementById('userAvatar');
-                    if (img && userData) {
-                        if (userData.photo_url) img.src = userData.photo_url;
-                        else img.src = `https://ui-avatars.com/api/?background=2ed573&color=fff&name=${encodeURIComponent(userData.first_name || 'Player')}&size=44&rounded=true`;
-                    }
-                }
-
-                document.getElementById('duck').addEventListener('click', clickDuck);
-                startFeedResetTimer();
-                startBonusResetTimer();
-                loadFromServer();
-                loadUserAvatar();
-                loadDuckSlots();   // загружаем слоты уток
+                if (tabId === 'tap') panels.tap?.classList.add('active');
+                if (tabId === 'eggs') panels.eggs?.classList.add('active');
+                if (tabId === 'ducks') panels.ducks?.classList.add('active');
+                if (tabId === 'shop') panels.shop?.classList.add('active');
             });
-        })();
+        });
+
+        // ---------- ЗАГРУЗКА АВАТАРКИ ПОЛЬЗОВАТЕЛЯ ----------
+        function loadUserAvatar() {
+            const img = document.getElementById('userAvatar');
+            if (!img) return;
+
+            try {
+                if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe?.user) {
+                    const user = window.Telegram.WebApp.initDataUnsafe.user;
+                    if (user.photo_url) {
+                        img.src = user.photo_url;
+                        console.log('✅ Аватарка загружена из Telegram');
+                    } else {
+                        // Генерация аватарки по имени (первая буква)
+                        const name = user.first_name || 'Player';
+                        img.src = `https://ui-avatars.com/api/?background=2ed573&color=fff&name=${encodeURIComponent(name)}&size=44&rounded=true&bold=true`;
+                        console.log('🎨 Сгенерирована аватарка по имени:', name);
+                    }
+                } else {
+                    // Заглушка для браузера
+                    img.src = 'https://ui-avatars.com/api/?background=aaa&color=fff&name=?&size=44&rounded=true';
+                    console.log('🖥️ Режим браузера, аватарка-заглушка');
+                }
+            } catch (e) {
+                console.warn('Ошибка загрузки аватарки:', e);
+                img.src = 'https://ui-avatars.com/api/?background=ffd966&color=fff&name=U&size=44&rounded=true';
+            }
+        }
+
+        document.getElementById('duck').addEventListener('click', clickDuck);
+        startPassiveIncome();
+        loadFromServer();
+        loadUserAvatar();
     </script>
 </body>
 
